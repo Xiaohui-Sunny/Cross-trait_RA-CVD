@@ -1,0 +1,348 @@
+library(data.table)
+library(tidyverse)
+library(dplyr)
+
+setwd("C:/Users/sunx3/OneDrive - Memorial Sloan Kettering Cancer Center/My Work/Project/Else/RA and CVD_genetic correlation/data/UKBB")
+dat <- fread("UKBB_pbc.tab")
+dat.sup <- fread("UKBB_pbc_supp.tab")
+dat.sup2 <- fread("UKBB_pbc_supp2.tab")
+dat.sup3 <- fread("liubin.tab")# physcial activity and townsend depreviation index
+dat.sup4 <- fread("UKBB_supp4_physical activity.tab") #502409 participants
+dat.sup5 <- fread("UKBB_supp5_BP.csv")
+
+dat <- merge(dat, dat.sup, by = "f.eid")
+dat <- merge(dat, dat.sup2, by = "f.eid")
+dat <- merge(dat, dat.sup3, by = "f.eid")
+dat <- merge(dat, dat.sup4, by = "f.eid") 
+dat <- merge(dat, dat.sup5, by = "f.eid")#502407
+
+col.name <- as.data.frame(colnames(dat))
+write.csv(col.name, "col.name.csv", row.names = F)# extract the filed id in the data to check the name of covariants
+
+rm(dat.sup)
+rm(dat.sup2)
+rm(dat.sup3)
+rm(dat.sup4)
+rm(dat.sup5)
+##########################################################
+# extract the initial data of covariants: age, Townsend index, sex, ethic, BMI, smoking, drinking, education quantily, physical activity
+ID <- as.matrix(dat$f.eid)
+colnames(ID)="ID"
+
+#sex
+sex <- dat$f.31.0.0
+sex <- as.matrix(sex)
+colnames(sex)="sex"
+
+#Townsend depreivation index at recruitment: 22189
+Townsend <- as.matrix(dat$f.189.0.0)
+colnames(Townsend)="Townsend depreivation index"
+
+
+# kinship 22021
+kinship <- as.matrix(dat$f.22021.0.0)
+colnames(kinship)="kinship"
+
+#Age when attended assessment center:21003 
+age_1 <- as.matrix(dat$f.21003.0.0)
+age_2 <- as.matrix(dat$f.21003.1.0)
+age_3 <- as.matrix(dat$f.21003.2.0)
+age_4 <- as.matrix(dat$f.21003.3.0)
+
+#Body mass index:21001
+BMI_1 <- as.matrix(dat$f.21001.0.0)
+BMI_2 <- as.matrix(dat$f.21001.1.0)
+BMI_3 <- as.matrix(dat$f.21001.2.0)
+BMI_4 <- as.matrix(dat$f.21001.3.0)
+
+#Smoking status: 20116
+smoking_1 <- as.matrix(dat$f.20116.0.0)
+smoking_2 <- as.matrix(dat$f.20116.1.0)
+smoking_3 <- as.matrix(dat$f.20116.2.0)
+smoking_4 <- as.matrix(dat$f.20116.3.0)
+
+#Alcohol intake frequency: 1558
+alcohol_1 <- as.matrix(dat$f.1558.0.0)
+alcohol_2 <- as.matrix(dat$f.1558.1.0)
+alcohol_3 <- as.matrix(dat$f.1558.2.0)
+alcohol_4 <- as.matrix(dat$f.1558.3.0)
+
+#Education2: Qualifications(6138)*
+education.qua_1 <- as.matrix(apply(dat[,12:17],1,min, na.rm =T))# extract the high level
+education.qua_1[education.qua_1==Inf] <- NA
+education.qua_2 <- as.matrix(apply(dat[,18:23],1,min, na.rm =T))
+education.qua_2[education.qua_2==Inf] <- NA
+education.qua_3 <- as.matrix(apply(dat[,24:29],1,min, na.rm =T))
+education.qua_3[education.qua_3==Inf] <- NA
+education.qua_4 <- as.matrix(apply(dat[,30:35],1,min, na.rm =T))
+education.qua_4[education.qua_4==Inf] <- NA
+
+#Ethic:21000
+ethnic_1 <- as.matrix(dat$f.21000.0.0)
+ethnic_2 <- as.matrix(dat$f.21000.1.0)
+ethnic_3 <- as.matrix(dat$f.21000.2.0)
+
+
+#Number of days/week wallked: 864
+No.walk_1 <- as.matrix(dat$f.864.0.0)
+No.walk_2 <- as.matrix(dat$f.864.1.0)
+No.walk_3 <- as.matrix(dat$f.864.2.0)
+No.walk_4 <- as.matrix(dat$f.864.3.0)
+
+#Duration of walks: 874
+Duration.walk_1 <- as.matrix(dat$f.874.0.0)
+Duration.walk_2 <- as.matrix(dat$f.874.1.0)
+Duration.walk_3 <- as.matrix(dat$f.874.2.0)
+Duration.walk_4 <- as.matrix(dat$f.874.3.0)
+
+
+#Number of days/week moderate physical activity:884_In a typical WEEK, on how many days did you do 10 minutes or more of moderate physical activities like carrying light loads, cycling at normal pace? (Do not include walking)
+No.moderate_1 <- as.matrix(dat$f.884.0.0)
+No.moderate_2 <- as.matrix(dat$f.884.1.0)
+No.moderate_3 <- as.matrix(dat$f.884.2.0)
+No.moderate_4 <- as.matrix(dat$f.884.3.0)
+
+#Duration of moderate activity:894_How many minutes did you usually spend doing moderate activities on a typical DAY
+Duration.moderate_1 <- as.matrix(dat$f.894.0.0)
+Duration.moderate_2 <- as.matrix(dat$f.894.1.0)
+Duration.moderate_3 <- as.matrix(dat$f.894.2.0)
+Duration.moderate_4 <- as.matrix(dat$f.894.3.0)
+
+#Number of days/week of vigorous physcial activity:904
+No.vigorous_1 <- as.matrix(dat$f.904.0.0)
+No.vigorous_2 <- as.matrix(dat$f.904.1.0)
+No.vigorous_3 <- as.matrix(dat$f.904.2.0)
+No.vigorous_4 <- as.matrix(dat$f.904.3.0)
+
+#Duration of vigorous physcial activity:914
+Duration.vigorous_1 <- as.matrix(dat$f.914.0.0)
+Duration.vigorous_2 <- as.matrix(dat$f.914.1.0)
+Duration.vigorous_3 <- as.matrix(dat$f.914.2.0)
+Duration.vigorous_4 <- as.matrix(dat$f.914.3.0)
+
+
+#Total cholesterol 30690
+TC_1 <- as.matrix(dat$f.30690.0.0)
+TC_2 <- as.matrix(dat$f.30690.1.0)
+
+#HDL 30760
+HDL_1 <- as.matrix(dat$f.30760.0.0)
+HDL_2 <- as.matrix(dat$f.30760.1.0)
+
+#LDL 30780
+LDL_1 <- as.matrix(dat$f.30780.0.0)
+LDL_2 <- as.matrix(dat$f.30780.1.0)
+
+
+#TC 30870
+TG_1 <- as.matrix(dat$f.30870.0.0)
+TG_2 <- as.matrix(dat$f.30870.1.0)
+
+
+age <- vector()
+BMI <- vector()
+smoking <- vector()
+alcohol <- vector()
+education.qua <- vector()
+ethnic <- vector()
+No.walk <- vector()
+Duration.walk <- vector()
+No.moderate <- vector()
+Duration.moderate <- vector()
+No.vigorous <- vector()
+Duration.vigorous <- vector()
+TC <- vector()
+HDL <- vector()
+LDL <- vector()
+TG <- vector()
+
+
+
+
+for(i in 1:nrow(dat)){
+  
+  if(complete.cases(age_1[i,1]))
+  {
+    
+    age[i]=age_1[i,1]
+    BMI[i]=BMI_1[i,1]
+    smoking[i]=smoking_1[i,1]
+    alcohol[i]=alcohol_1[i,1]
+    education.qua[i]=education.qua_1[i,1]
+    ethnic[i]=ethnic_1[i,1]
+    No.walk[i] = No.walk_1[i,1]
+    Duration.walk[i] = Duration.walk_1[i,1]
+    No.moderate[i] = No.moderate_1[i,1]
+    Duration.moderate[i] = Duration.moderate_1[i,1]
+    No.vigorous[i] = No.vigorous_1[i,1]
+    Duration.vigorous[i] = Duration.vigorous_1[i,1]
+    TC[i] = TC_1[i,1]
+    HDL[i] = HDL_1[i,1]
+    LDL[i] = LDL_1[i,1]
+    TG[i] = TG_1[i,1]
+    
+    
+    
+  }
+  else if (complete.cases(age_2[i,1]))
+  {
+    
+    age[i]=age_2[i,1]
+    BMI[i]=BMI_2[i,1]
+    smoking[i]=smoking_2[i,1]
+    alcohol[i]=alcohol_2[i,1]
+    education.qua[i]=education.qua_2[i,1]
+    ethnic[i]=ethnic_2[i,1]
+    No.walk[i] = No.walk_2[i,1]
+    Duration.walk[i] = Duration.walk_2[i,1]
+    No.moderate[i] = No.moderate_2[i,1]
+    Duration.moderate[i] = Duration.moderate_2[i,1]
+    No.vigorous[i] = No.vigorous_2[i,1]
+    Duration.vigorous[i] = Duration.vigorous_2[i,1]
+    TC[i] = TC_2[i,1]
+    HDL[i] = HDL_2[i,1]
+    LDL[i] = LDL_2[i,1]
+    TG[i] = TG_2[i,1]
+    
+    
+  }
+  else if (complete.cases(age_3[i,1]))
+  {
+    
+    age[i]=age_3[i,1]
+    BMI[i]=BMI_3[i,1]
+    smoking[i]=smoking_3[i,1]
+    alcohol[i]=alcohol_3[i,1]
+    education.qua[i]=education.qua_3[i,1]
+    ethnic[i]=ethnic_3[i,1]
+    No.walk[i] = No.walk_3[i,1]
+    Duration.walk[i] = Duration.walk_3[i,1]
+    No.moderate[i] = No.moderate_3[i,1]
+    Duration.moderate[i] = Duration.moderate_3[i,1]
+    No.vigorous[i] = No.vigorous_3[i,1]
+    Duration.vigorous[i] = Duration.vigorous_3[i,1]
+    
+  }
+  else if (complete.cases(age_4[i,1]))
+  {
+    
+    age[i]=age_4[i,1]
+    BMI[i]=BMI_4[i,1]
+    smoking[i]=smoking_4[i,1]
+    alcohol[i]=alcohol_4[i,1]
+    education.qua[i]=education.qua_4[i,1]
+    No.walk[i] = No.walk_4[i,1]
+    Duration.walk[i] = Duration.walk_4[i,1]
+    No.moderate[i] = No.moderate_4[i,1]
+    Duration.moderate[i] = Duration.moderate_4[i,1]
+    No.vigorous[i] = No.vigorous_4[i,1]
+    Duration.vigorous[i] = Duration.vigorous_4[i,1]
+  }
+  
+  else {
+    
+    age[i]=age_1[i,1]
+    BMI[i]=BMI_1[i,1]
+    smoking[i]=smoking_1[i,1]
+    alcohol[i]=alcohol_1[i,1]
+    education.qua[i]=education.qua_1[i,1]
+    ethnic[i]=ethnic_1[i,1]  
+    No.walk[i] = No.walk_1[i,1]
+    Duration.walk[i] = Duration.walk_1[i,1]
+    No.moderate[i] = No.moderate_1[i,1]
+    Duration.moderate[i] = Duration.moderate_1[i,1]
+    No.vigorous[i] = No.vigorous_1[i,1]
+    Duration.vigorous[i] = Duration.vigorous_1[i,1]
+    TC[i] = TC_1[i,1]
+    HDL[i] = HDL_1[i,1]
+    LDL[i] = LDL_1[i,1]
+    TG[i] = TG_1[i,1]
+    
+  }
+}
+
+
+age<-matrix(age)
+colnames(age) <- "Age"
+BMI<-matrix(BMI)
+colnames(BMI) <- "BMI"
+smoking <- matrix(smoking)
+colnames(smoking) <- "Smoking"
+alcohol <- matrix(alcohol)
+colnames(alcohol) <- "Alcohol"
+education.qua <- matrix(education.qua)
+colnames(education.qua) <- "Education.qua"
+ethnic <- matrix(ethnic)
+colnames(ethnic) <- "Enthnic"
+
+No.walk <- matrix(No.walk)
+colnames(No.walk) <- "No.walk"
+
+Duration.walk <- matrix(Duration.walk)
+colnames(Duration.walk) <- "Duration.walk"
+
+No.moderate <- matrix(No.moderate)
+colnames(No.moderate) <- "No.moderate"
+
+Duration.moderate <- matrix(Duration.moderate)
+colnames(Duration.moderate) <- "Duration.moderate"
+
+No.vigorous <- matrix(No.vigorous)
+colnames(No.vigorous) <- "No.vigorous"
+
+Duration.vigorous <- matrix(Duration.vigorous)
+colnames(Duration.vigorous) <- "Duration.vigorous"
+
+
+TC <- matrix(TC)
+colnames(TC) <-"TC"
+
+HDL <- matrix(HDL)
+colnames(HDL) <-"HDL"
+
+LDL <- matrix(LDL)
+colnames(LDL) <-"LDL"
+
+TG <- matrix(TG)
+colnames(LDL) <-"TG"
+
+
+
+dat.baseline <- cbind(ID, sex, age,Townsend, kinship, BMI, smoking, alcohol, education.qua, ethnic, No.walk, Duration.walk, No.moderate, Duration.moderate, No.vigorous, Duration.vigorous, TC, HDL, LDL, TG)
+dat.baseline <- as.data.frame(dat.baseline)
+
+### calculate MET for each participant : Ref: Guo W, Fensom G K, Reeves G K, et al. Physical activity and breast cancer risk: results from the UK Biobank prospective cohort[J]. British Journal of Cancer, 2020, 122(5): 726-732.
+table(dat.baseline$No.walk)
+table(dat.baseline$No.moderate)
+table(dat.baseline$No.vigorous)
+
+#-1 represents "Do not know"
+#-3 represents "Prefer not to answer"
+
+dat.baseline[,c("No.walk","No.moderate","No.vigorous")][dat.baseline[,c("No.walk","No.moderate","No.vigorous")] == -3] <- NA
+dat.baseline[,c("No.walk","No.moderate","No.vigorous")][dat.baseline[,c("No.walk","No.moderate","No.vigorous")] == -2] <- NA
+dat.baseline[,c("No.walk","No.moderate","No.vigorous")][dat.baseline[,c("No.walk","No.moderate","No.vigorous")] == -1] <- NA
+
+
+table(dat.baseline$Duration.walk)
+table(dat.baseline$Duration.moderate)
+table(dat.baseline$Duration.vigorous)
+
+dat.baseline[,c("Duration.walk","Duration.moderate","Duration.vigorous")][dat.baseline[,c("Duration.walk","Duration.moderate","Duration.vigorous")] == -3] <- NA
+dat.baseline[,c("Duration.walk","Duration.moderate","Duration.vigorous")][dat.baseline[,c("Duration.walk","Duration.moderate","Duration.vigorous")] == -2] <- NA
+dat.baseline[,c("Duration.walk","Duration.moderate","Duration.vigorous")][dat.baseline[,c("Duration.walk","Duration.moderate","Duration.vigorous")] == -1] <- NA
+
+# Mets hours per week
+dat.baseline$walk.METs <- (dat.baseline$Duration.walk * 3.3)/60 * dat.baseline$No.walk
+dat.baseline$moderate.METs <- (dat.baseline$Duration.moderate * 4)/60 * dat.baseline$No.moderate
+dat.baseline$vigorous.METs <- (dat.baseline$Duration.vigorous * 8)/60 * dat.baseline$No.vigorous
+dat.baseline$METs <- apply(dat.baseline[,c("walk.METs","moderate.METs","vigorous.METs")], 1, sum, na.rm = T)
+
+
+write.csv(dat.baseline, "ukbb_RA&CAD_baselibe.csv", row.names = F)
+
+## add baseline SBP and DBP frim Bin Liu
+dat.baseline <- fread("ukbb_RA&CAD_baselibe.csv")
+dat.baseline <- merge(dat.baseline, dat.sup5, by.x = "ID", by.y = "f.eid")
+
+write.csv(dat.baseline, "ukbb_RA&CAD_baselibe.csv", row.names = F)
